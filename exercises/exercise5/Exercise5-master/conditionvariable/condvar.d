@@ -32,6 +32,7 @@ class Resource(T) {
         Mutex               mtx;
         Condition           cond;
         PriorityQueue!int   queue;
+        bool               busy=false;
     }
     
     this(){
@@ -39,36 +40,32 @@ class Resource(T) {
         cond    = new Condition(mtx);
     }
     
-    T allocate(int id, int priority){
-        mtx.lock();
-        queue.insert(id,priority);
+   T allocate(int id, int priority){
+        mtx.lock(); // Lock the mutex to ensure exclusive access
+        scope(exit) mtx.unlock(); // Ensure the mutex is unlocked when this function returns
+        queue.insert(id, priority); // Insert this thread into the queue
 
-        while(queue.front() !=id){
-            cond.wait();
+        while (busy || queue.front() != id) { // While this thread is not at the front of the queue
+            cond.wait(); // Wait for a notification
         }
 
-            
-        queue.popFront();       //Fjern oss fra køen
-        mtx.unlock();       //slipp mutex
+        busy = true; // Mark the resource as busy
+        queue.popFront(); // Remove this thread from the queue
 
-
-        return value;
+        return value; // Return the resource value
     }
     
+
     void deallocate(T v){
-        mtx.lock();     //lås mutex
-        value = v;
-       
-
-        if (!queue.empty){  //hvis noen venter på ressursen
-            cond.notifyAll();  //vekk alle ventende tråder
-        }
-        mtx.unlock(); //slipp mutec
+        mtx.lock(); // Lock the mutex to ensure exclusive access
+        scope(exit) mtx.unlock(); // Ensure the mutex is unlocked when this function returns
+        value = v; // Set the resource value
+        busy = false; // Mark the resource as not busy
+        cond.notifyAll(); // Notify all waiting threads
     }
+
+
 }
-
-
-
 
 // --- PRIORITY QUEUE --- //
 /*

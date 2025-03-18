@@ -28,15 +28,15 @@ Condition:
 */
 class Resource(T) {
     private {
-        T                   value;
-        Mutex               mtx;
-        Condition           cond;
+        T                   value; //delt ressurs
+        Mutex               mtx; 
+        Condition           cond;  //condition variabel for å vekkke ventende tråder
         PriorityQueue!int   queue;
         bool               busy=false;
     }
     
     this(){
-        mtx     = new Mutex();
+        mtx     = new Mutex();   initialiserer mutex og condition variabel med mutex
         cond    = new Condition(mtx);
     }
     
@@ -45,8 +45,10 @@ class Resource(T) {
         scope(exit) mtx.unlock(); // Ensure the mutex is unlocked when this function returns
         queue.insert(id, priority); // Insert this thread into the queue
 
-        while (busy || queue.front() != id) { // While this thread is not at the front of the queue
-            cond.wait(); // Wait for a notification
+
+        //vent til denne tråden er først i køen og ressursen er ledig
+        while (busy || queue.front() != id) { 
+            cond.wait(); // Wait for a notification fra condition variabel
         }
 
         busy = true; // Mark the resource as busy

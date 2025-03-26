@@ -69,23 +69,9 @@ func main() {
 	go elevio.PollButtons(buttonPressedChannel)
 	//har started polling på obstruction, floorsensor, stopbutton i FSM
 
-	var initDirection elevio.MotorDirection = elevio.MD_Down
+	//var initDirection elevio.MotorDirection = elevio.MD_Down
+	initDirection := worldview.DetermineInitialDirection(WorldViewRXChannel, elevatorID)
 
-	select {
-	case worldView := <-WorldViewRXChannel:
-		if worldView.ElevatorStatusList != nil {
-			if _, ok := worldView.ElevatorStatusList[elevatorID]; ok {
-				//initDirection = elevio.MotorDirection(worldView.ElevatorStatusList[elevatorID].Elev.Direction)
-				if worldView.ElevatorStatusList[elevatorID].Elev.Direction == single_elevator.Down {
-					initDirection = elevio.MD_Down
-				} else {
-					initDirection = elevio.MD_Up
-				}
-			}
-		}
-	case <-time.After(100 * time.Millisecond):
-		initDirection = elevio.MD_Down
-	}
 
 	go single_elevator.SingleElevator(newOrderChannel, completedOrderChannel, elevatorStateChannel, initDirection)
 	go communication.CommunicationHandler(elevatorID, peerUpdateChannel, IDPeersChannel)

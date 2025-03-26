@@ -483,46 +483,16 @@ func UpdateLastChanged(localWorldView WorldView, receivedWorldView WorldView, cu
 //
 
 
-// func DetermineInitialDirection(WorldViewRXChannel <-chan WorldView, elevatorID string) elevio.MotorDirection {
-//     var initDirection elevio.MotorDirection = elevio.MD_Down
-
-//     select {
-//     case worldView := <-WorldViewRXChannel:
-//         if worldView.ElevatorStatusList != nil {
-//             if _, ok := worldView.ElevatorStatusList[elevatorID]; ok {
-//                 if worldView.ElevatorStatusList[elevatorID].Elev.Direction == single_elevator.Down {
-//                     initDirection = elevio.MD_Down
-//                 } else {
-//                     initDirection = elevio.MD_Up
-//                 }
-//             }
-//         }
-//     case <-time.After(100 * time.Millisecond):
-//         initDirection = elevio.MD_Down
-//     }
-
-//     return initDirection
-// }
-
-
-
-
-
-// func FetchInitialDirection(WorldViewRXChannel <-chan WorldView, elevatorID string) elevio.MotorDirection {
-// var initDirection elevio.MotorDirection = elevio.MD_Down
-// select {
-// case worldView := <-WorldViewRXChannel:
-// 	if worldView.ElevatorStatusList != nil {
-// 		if _, ok := worldView.ElevatorStatusList[elevatorID]; ok {
-// 			//initDirection = elevio.MotorDirection(worldView.ElevatorStatusList[elevatorID].Elev.Direction)
-// 			if worldView.ElevatorStatusList[elevatorID].Elev.Direction == single_elevator.Down {
-// 				initDirection = elevio.MD_Down
-// 			} else {
-// 				initDirection = elevio.MD_Up
-// 			}
-// 		}
-// 	}
-// case <-time.After(100 * time.Millisecond):
-// 	initDirection = elevio.MD_Down
-// }
-// return initDirection}
+func DetermineInitialDirection(WorldViewRXChannel <-chan WorldView, elevatorID string) elevio.MotorDirection {
+    select {
+    case worldView := <-WorldViewRXChannel:
+        if status, exists := worldView.ElevatorStatusList[elevatorID]; exists {
+            if status.Elev.Direction == single_elevator.Down {
+                return elevio.MD_Down
+            }
+            return elevio.MD_Up
+        }
+    case <-time.After(100 * time.Millisecond):
+    }
+    return elevio.MD_Down // Standard retning ved timeout
+}

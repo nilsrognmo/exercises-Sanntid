@@ -5,7 +5,6 @@ import (
 	"TTK4145-Heislab/driver-go/elevio"
 	"fmt"
 	"time"
-	
 )
 
 type Elevator struct { //the elevators current state
@@ -63,18 +62,8 @@ func SingleElevator(
 	initDirection elevio.MotorDirection,
 ) {
 	//Initialization of elevator
-	fmt.Println("setting motor down")
-
-	//elevio.SetMotorDirection(elevio.MD_Down)
-	//state := Elevator{Direction: Down, Behaviour: Moving}
+	fmt.Println("setting motor in init direction or down")
 	var state Elevator
-	//currentFloor := elevio.GetFloor()
-
-	// Vent til heisen forlater nåværende etasje
-	// if elevio.GetFloor() != -1 {
-	// 	time.Sleep(100 * time.Millisecond)
-	// }
-
 	elevio.SetMotorDirection(initDirection)
 	closestFloor := findClosestFloor()
 	elevio.SetMotorDirection(elevio.MD_Stop)

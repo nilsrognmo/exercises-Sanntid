@@ -241,6 +241,25 @@ func AssignOrder(worldView WorldView, IDsAliveElevators []string) map[string][][
 
 	input := HRAInputFormatting(worldView, IDsAliveElevators)
 
+//--------------------------------------------------------
+assignments := make(map[string][][2]bool)
+if len(IDsAliveElevators) == 1 && IDsAliveElevators[0] == worldView.ID {
+	for floor := 0; floor < configuration.NumFloors; floor++ {
+		for btn := 0; btn < configuration.NumButtons-1; btn++ {
+			if worldView.HallOrderStatus[floor][btn].StateofOrder == configuration.Confirmed {
+				if assignments[worldView.ID] == nil {
+					assignments[worldView.ID] = make([][2]bool, configuration.NumFloors)
+				}
+				assignments[worldView.ID][floor][btn] = true
+			}
+		}
+	}
+	return assignments
+}
+
+//__________________________________________________________________
+
+
 	// var input AssignerExecutable.HRAInput
 	// input.HallRequests = [][2]bool{{false, false}, {false, false}, {false, false}, {false, false}}
 	// input.HallRequests[2][0] = true
@@ -281,6 +300,19 @@ func MergeWorldViews(localWorldView *WorldView, receivedWorldView WorldView, IDs
 	// 		localWorldView.ElevatorStatusList[id] = elevState
 	// 	}
 	// }
+
+//--------------------------------------------------
+if !contains(availableIDs, remote.ID) {
+	for floor := 0; floor < configuration.NumFloors; floor++ {
+		for btn := 0; btn < configuration.NumButtons-1; btn++ {
+			if local.HallOrderStatus[floor][btn].StateofOrder == configuration.Confirmed {
+				merged.HallOrderStatus[floor][btn] = local.HallOrderStatus[floor][btn]
+			}
+		}
+	}
+}
+//--------------------------------------------------
+
 
 	//Tor la til dette, og komenterte ut det over
 	if _, exists := localWorldView.ElevatorStatusList[receivedWorldView.ID]; !exists {

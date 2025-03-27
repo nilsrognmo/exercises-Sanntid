@@ -97,21 +97,28 @@ func SingleElevator(
 		case <-timerOutChannel:
 			switch state.Behaviour {
 			case DoorOpen:
-				DirectionBehaviourPair := ordersChooseDirection(state.Floor, state.Direction, OrderMatrix)
-				state.Behaviour = DirectionBehaviourPair.Behaviour
-				state.Direction = Direction(DirectionBehaviourPair.Direction)
-				switch state.Behaviour {
-				case DoorOpen:
+				if state.Obstructed {
+					//logikken her
+					fmt.Println("Obstruction detected! Door timer extended.")
 					resetTimerChannel <- true
-					OrderCompletedatCurrentFloor(state.Floor, Direction(state.Direction.convertMD()), completedOrderChannel, OrderMatrix)
-				case Moving, Idle:
-					elevio.SetDoorOpenLamp(false)
-					elevio.SetMotorDirection(DirectionBehaviourPair.Direction)
+				} else {
+					DirectionBehaviourPair := ordersChooseDirection(state.Floor, state.Direction, OrderMatrix)
+					state.Behaviour = DirectionBehaviourPair.Behaviour
+					state.Direction = Direction(DirectionBehaviourPair.Direction)
+					switch state.Behaviour {
+					case DoorOpen:
+						resetTimerChannel <- true
+						OrderCompletedatCurrentFloor(state.Floor, Direction(state.Direction.convertMD()), completedOrderChannel, OrderMatrix)
+					case Moving, Idle:
+						elevio.SetDoorOpenLamp(false)
+						elevio.SetMotorDirection(DirectionBehaviourPair.Direction)
 
+					}
 				}
 			case Moving:
 				panic("timeroutchannel in moving")
 			}
+
 		case stopbuttonpressed := <-stopPressedChannel:
 			if stopbuttonpressed {
 				fmt.Println("StopButton is pressed")
@@ -120,32 +127,21 @@ func SingleElevator(
 			} else {
 				elevio.SetStopLamp(false)
 			}
+
 		case obstruction := <-obstructedChannel:
+			state.Obstructed = obstruction // Oppdater tilstanden
 			if obstruction {
-				state.Obstructed = true
-				state.Unavailable = true
-				fmt.Println("Obstruction detected! Elevator unavailable")
-				state.Behaviour = DoorOpen
-				elevio.SetDoorOpenLamp(true)
-				resetTimerChannel <- true
-				for obstruction {
-					select {
-					case obstruction = <-obstructedChannel:
-						if !obstruction {
-							state.Obstructed = false
-							state.Unavailable = false
-							fmt.Println("Obstruction cleared! Elevator available.")
-							if state.Behaviour == DoorOpen {
-								resetTimerChannel <- true
-							}
-						}
-					default:
-						if state.Behaviour == DoorOpen {
-							resetTimerChannel <- true
-						}
-					}
+				fmt.Println("Obstruction detected!")
+				if state.Behaviour == DoorOpen {
+					resetTimerChannel <- true // Forleng dørtiden
+				}
+			} else {
+				fmt.Println("Obstruction cleared.")
+				if state.Behaviour == DoorOpen {
+					resetTimerChannel <- true // Start lukkeprosessen på nytt
 				}
 			}
+
 		case state.Floor = <-floorEnteredChannel:
 			fmt.Println("New floor: ", state.Floor)
 			elevio.SetFloorIndicator(state.Floor)

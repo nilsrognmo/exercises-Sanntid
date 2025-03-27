@@ -118,6 +118,24 @@ func WorldViewManager(
 					}
 				}
 			}
+
+//_______________________________________________________________________________________
+		
+			// Sjekk om vi er alene i nettverket
+			isAlone := len(IDsAvailableForAssignment) == 1 && IDsAvailableForAssignment[0] == elevatorID
+		
+			// Tildel alle hallbestillinger til oss selv hvis vi er offline/alene
+			if isAlone {
+				for floor := 0; floor < configuration.NumFloors; floor++ {
+					for btn := 0; btn < configuration.NumButtons-1; btn++ {
+						if localWorldView.HallOrderStatus[floor][btn].Active {
+							AssignHallOrders[elevatorID][floor][btn] = true
+						}
+					}
+				}
+			}
+
+//_______________________________________________________________________________________________________________________________
 			// if len(IDsAvailableForAssignment) == 0{
 			// 	fmt.Println("Only us which can take order??")
 			// } else {
